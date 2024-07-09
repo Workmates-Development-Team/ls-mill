@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import axios from "axios";
 import { Loader2, Plus, Upload } from "lucide-react";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import MarkdownRenderer from "@/components/MarkdownReader";
 import { axiosInstance } from "@/utils/axios";
 import {
@@ -22,6 +22,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import TableSkeleton from "@/components/TableSkeleton";
+import { generateRandomString } from "@/utils/helper";
+import { PYTHON_API } from "@/constant/path";
 
 const Home = () => {
   const { id } = useParams();
@@ -56,22 +58,18 @@ const Home = () => {
         formData.append("pdfs", file);
       });
 
-      const response = await axios.post(
-        "http://127.0.0.1:6001/upload_pdfs",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await axios.post(PYTHON_API + "/upload_pdfs", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       const updoadData = await response.data;
       console.log(updoadData);
 
       setDoc_id(updoadData?._id);
 
-      const { data } = await axios.post("http://127.0.0.1:6001/ask", {
+      const { data } = await axios.post(PYTHON_API + "/ask", {
         doc_id: updoadData?._id,
         input_text: `Analyze each uploaded invoice PDF, sequentially numbering their contents. Consolidate the data into a unified table format with columns for Item, Color, Size, Quantity (Qty), Unit of Measurement (UOM), Rate, and Amount.`,
         start_new,
@@ -103,11 +101,27 @@ const Home = () => {
     }
   };
 
+  const navigate = useNavigate();
+  const handleNew = () => {
+    const newId = generateRandomString();
+    const path = `/chat/${newId}`;
+
+    setSession_number(null);
+    setStart_new(true);
+    setMessages([]);
+    setDoc_id(null);
+    setSelectedFiles([]);
+
+    // Navigate to the new path
+    navigate(path, { replace: true });
+  };
   return (
     <AuthGaurd>
       <div className="mx-auto max-w-7xl px-2 md:px-0 h-screen pt-16 pb-28 overflow-y-auto relative chat">
         <div className="mt-3 flex flex-wrap items-center gap-4">
-         
+          <Button onClick={handleNew} variant="outline">
+            <Plus className="w-4 h-4 mr-2" /> New Window
+          </Button>
 
           <div className="flex flex-col items-center">
             <label
@@ -156,11 +170,10 @@ const Home = () => {
           </div>
         </div>
 
-        
-          <div className="flex justify-center mt-10">
+        <div className="flex justify-center mt-10">
           {loading && <Loader2 className="h-16 w-16 animate-spin" />}
-          </div>
-        
+        </div>
+
         <div className="mt-4 flex flex-col gap-4">
           {messages?.map((message, i) =>
             message?.by === "ai" ? (

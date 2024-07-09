@@ -1,0 +1,1 @@
+export const PYTHON_API = 'https://lspythonapi.cwmgenai.com'
