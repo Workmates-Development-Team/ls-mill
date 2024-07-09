@@ -41,7 +41,11 @@ const Home = () => {
 
   const handleFileChange = (e) => {
     const filesArray = Array.from(e.target.files);
-    setSelectedFiles(filesArray);
+    if (filesArray.length + selectedFiles.length > 3) {
+      alert("You can only select up to 3 PDFs at a time in Demo version.");
+      return;
+    }
+    setSelectedFiles((prevFiles) => [...prevFiles, ...filesArray]);
   };
 
   useEffect(() => {
@@ -58,7 +62,7 @@ const Home = () => {
         formData.append("pdfs", file);
       });
 
-      const response = await axios.post(PYTHON_API + "/upload_pdfs", formData, {
+      const response = await axios.post("https://lspythonapi.cwmgenai.com/upload_pdfs", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -69,7 +73,7 @@ const Home = () => {
 
       setDoc_id(updoadData?._id);
 
-      const { data } = await axios.post(PYTHON_API + "/ask", {
+      const { data } = await axios.post("https://lspythonapi.cwmgenai.com/ask", {
         doc_id: updoadData?._id,
         input_text: `Analyze each uploaded invoice PDF, sequentially numbering their contents. Consolidate the data into a unified table format with columns for Item, Color, Size, Quantity (Qty), Unit of Measurement (UOM), Rate, and Amount.`,
         start_new,
