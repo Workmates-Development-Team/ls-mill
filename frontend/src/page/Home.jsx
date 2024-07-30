@@ -62,7 +62,7 @@ const Home = () => {
         formData.append("pdfs", file);
       });
 
-      const response = await axios.post("https://lspythonapi.cwmgenai.com/upload_pdfs", formData, {
+      const response = await axios.post(PYTHON_API + "/upload_pdfs", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -73,7 +73,7 @@ const Home = () => {
 
       setDoc_id(updoadData?._id);
 
-      const { data } = await axios.post("https://lspythonapi.cwmgenai.com/ask", {
+      const { data } = await axios.post(PYTHON_API + "/ask", {
         doc_id: updoadData?._id,
         input_text: `Analyze each uploaded invoice PDF, sequentially numbering their contents. Consolidate the data into a unified table format with columns for Item, Color, Size, Quantity (Qty), Unit of Measurement (UOM), Rate, and Amount.`,
         start_new,
@@ -119,6 +119,8 @@ const Home = () => {
     // Navigate to the new path
     navigate(path, { replace: true });
   };
+
+  
   return (
     <AuthGaurd>
       <div className="mx-auto max-w-7xl px-2 md:px-0 h-screen pt-16 pb-28 overflow-y-auto relative chat">
