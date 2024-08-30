@@ -47,6 +47,26 @@ const Home = () => {
     setSelectedFiles((prevFiles) => [...prevFiles, ...filesArray]);
   };
 
+  const getChat = async () => {
+    try {
+      const { data } = await axiosInstance("/chat/" + id);
+      console.log(data);
+      setSelectedFiles(data?.pdf_text);
+      setDoc_id(data?._id);
+      setMessages(data?.chat);
+      setSession_number(data?.session_number);
+      setStart_new(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      getChat();
+    }
+  }, [id]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -141,6 +161,7 @@ const Home = () => {
               className="hidden"
               multiple
               onChange={handleFileChange}
+              disabled={messages.length}
             />
           </div>
 
@@ -158,7 +179,7 @@ const Home = () => {
           <div>
             <Button
               disabled={
-                doc_id || !selectedFiles?.length || loading ? true : false
+                doc_id || !selectedFiles?.length || loading || messages?.length ? true : false
               }
               onClick={handleUpload}
             >
@@ -181,9 +202,6 @@ const Home = () => {
           {messages?.map((message, i) =>
             message?.by === "ai" ? (
               <div key={i}>
-                {/* <div>
-                    <img width={40} src="/images/bot.png" alt="" />
-                  </div> */}
                 <MarkdownRenderer text={message.text} />
                 {/* <div>
                   {message.text}

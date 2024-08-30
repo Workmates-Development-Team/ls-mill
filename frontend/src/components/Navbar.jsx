@@ -70,7 +70,7 @@ export default function Navbar() {
                 </Link>
                 <div className="hidden sm:ml-6 sm:block">
                   <div className="flex space-x-4">
-                    {/* {navigation.map((item) => (
+                    {navigation.map((item) => (
                       <Link
                         key={item.name}
                         to={item.href}
@@ -83,7 +83,7 @@ export default function Navbar() {
                       >
                         {item.name}
                       </Link>
-                    ))} */}
+                    ))}
                   </div>
                 </div>
               </div>

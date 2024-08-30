@@ -100,8 +100,8 @@ const History = () => {
            
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">Chat Id</TableHead>
-                <TableHead>Chat Name</TableHead>
+                <TableHead className="w-[100px]">Invoice Id</TableHead>
+                <TableHead>Filename</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -111,9 +111,9 @@ const History = () => {
                   <TableCell className="font-medium">
                     {chat?.chatId}
                   </TableCell>
-                  <TableCell>{chat?.chat[0]?.text?.slice(0, 20)}...</TableCell>
+                  <TableCell>{chat?.pdf_text[0]?.filename}</TableCell>
                   <TableCell className="text-right">
-                    <Link to={'/chat/'+chat?.chatId} className={cn(buttonVariants({}))}>Go to Chat</Link>
+                    <Link to={'/chat/'+chat?.chatId} className={cn(buttonVariants({}))}>View</Link>
                   </TableCell>
                 </TableRow>
               ))}
