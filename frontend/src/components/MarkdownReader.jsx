@@ -1,11 +1,22 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { materialDark, prism } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
-// import { CopyIcon } from "../assets/SVG/Icons"; // Ensure the path is correct
 
 const MarkdownRenderer = ({ text, isDarkMode }) => {
+  const [tableData, setTableData] = useState([]);
+  const tableRef = useRef(null);
+
+  useEffect(() => {
+    if (tableRef.current) {
+      const rows = Array.from(tableRef.current.querySelectorAll("tr")).map((row) =>
+        Array.from(row.querySelectorAll("th, td")).map((cell) => cell.textContent.trim())
+      );
+      setTableData(rows);
+    }
+  }, [text]); // Re-run when the text changes
+
   const handleCopyClick = (content) => {
     const textarea = document.createElement("textarea");
     textarea.value = content;
@@ -13,6 +24,20 @@ const MarkdownRenderer = ({ text, isDarkMode }) => {
     textarea.select();
     document.execCommand("copy");
     document.body.removeChild(textarea);
+  };
+
+  const handleDownloadCSV = () => {
+    if (tableData.length === 0) return;
+
+    const csvRows = tableData.map(row => row.join(','));
+    const csvContent = `data:text/csv;charset=utf-8,${csvRows.join('\n')}`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "table.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -46,39 +71,19 @@ const MarkdownRenderer = ({ text, isDarkMode }) => {
             </code>
           );
         },
-        ol({ children, ...props }) {
-          return (
-            <ol {...props} className="pl-10 mt-2 list-decimal dark:text-gray-300">
-              {children}
-            </ol>
-          );
-        },
-        ul({ children, ...props }) {
-          return (
-            <ul {...props} className="pl-10 mt-2 list-disc dark:text-gray-300">
-              {children}
-            </ul>
-          );
-        },
-        li({ children, ...props }) {
-          return (
-            <li {...props} className="mb-1 dark:text-gray-300">
-              {children}
-            </li>
-          );
-        },
-        p({ children, ...props }) {
-          return (
-            <p {...props} className="my-3 dark:text-gray-300">
-              {children}
-            </p>
-          );
-        },
         table({ children, ...props }) {
           return (
-            <table {...props} className="w-full border-collapse my-5 dark:text-gray-300">
-              {children}
-            </table>
+            <>
+              <button
+                onClick={handleDownloadCSV}
+                className="mb-2 p-2 text-sm flex items-center gap-1 cursor-pointer bg-blue-500 text-white border-none dark:bg-blue-700"
+              >
+                Download CSV
+              </button>
+              <table ref={tableRef} {...props} className="w-full border-collapse my-5 dark:text-gray-300">
+                {children}
+              </table>
+            </>
           );
         },
         thead({ children, ...props }) {

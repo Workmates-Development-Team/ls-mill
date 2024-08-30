@@ -32,7 +32,6 @@ const Home = () => {
   const [messages, setMessages] = useState([]);
   const [doc_id, setDoc_id] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [skills, setSkills] = useState("");
 
   const { user } = useContext(AuthContext);
 
@@ -75,7 +74,7 @@ const Home = () => {
 
       const { data } = await axios.post(PYTHON_API + "/ask", {
         doc_id: updoadData?._id,
-        input_text: `Analyze each uploaded invoice PDF, sequentially numbering their contents. Consolidate the data into a unified table format with columns for Item, Color, Size, Quantity (Qty), Unit of Measurement (UOM), Rate, and Amount.`,
+        input_text: `Analyze each uploaded invoice PDF, sequentially numbering their contents. Consolidate the data into a unified table format with columns for PO NO, Date, ItemNo, Type, Variety, Size, Color, Article, UOM, Qty, Rate, Total and Mother PO. (in amount or any price don't include ',' just give me exact value)`,
         start_new,
         session_number,
       });
@@ -115,8 +114,6 @@ const Home = () => {
     setMessages([]);
     setDoc_id(null);
     setSelectedFiles([]);
-
-    // Navigate to the new path
     navigate(path, { replace: true });
   };
 

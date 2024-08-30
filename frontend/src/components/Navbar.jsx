@@ -30,13 +30,16 @@ export default function Navbar() {
   const { theme } = useTheme();
   const { pathname } = useLocation();
 
-  const {handleLogout} = useContext(AuthContext)
+  const { handleLogout } = useContext(AuthContext);
 
   const isActive = (path) => {
     return path === pathname;
   };
   return (
-    <Disclosure as="nav" className="dark:bg-gray-800 z-20 bg-gray-100 fixed w-full">
+    <Disclosure
+      as="nav"
+      className="dark:bg-gray-800 z-20 bg-gray-100 fixed w-full"
+    >
       {({ open }) => (
         <>
           <div className="mx-auto max-w-7xl px-2 md:px-0">
@@ -138,7 +141,7 @@ export default function Navbar() {
                       <MenuItem>
                         {({ focus }) => (
                           <button
-                          onClick={handleLogout}
+                            onClick={handleLogout}
                             className={classNames(
                               focus ? "bg-gray-100" : "",
                               "block px-4 py-2 text-sm text-gray-700"
@@ -151,8 +154,6 @@ export default function Navbar() {
                     </MenuItems>
                   </Transition>
                 </Menu>
-
-               
               </div>
             </div>
           </div>
