@@ -15,7 +15,7 @@ const MarkdownRenderer = ({ text, isDarkMode }) => {
       );
       setTableData(rows);
     }
-  }, [text]); // Re-run when the text changes
+  }, [text]);
 
   const handleCopyClick = (content) => {
     const textarea = document.createElement("textarea");
@@ -40,6 +40,28 @@ const MarkdownRenderer = ({ text, isDarkMode }) => {
     document.body.removeChild(link);
   };
 
+  const handleDownloadJSON = () => {
+    if (tableData.length <= 1) return;
+
+    const headers = tableData[0];
+    const jsonArray = tableData.slice(1).map(row => {
+      const rowObject = {};
+      row.forEach((cell, index) => {
+        rowObject[headers[index]] = cell;
+      });
+      return rowObject;
+    });
+
+    const jsonString = JSON.stringify(jsonArray, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "table.json");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -53,7 +75,6 @@ const MarkdownRenderer = ({ text, isDarkMode }) => {
                 onClick={() => handleCopyClick(codeContent)}
                 className="absolute top-0 right-0 z-10 p-2 text-sm flex items-center gap-1 cursor-pointer bg-gray-700 text-white border-none dark:bg-gray-200 dark:text-black"
               >
-                {/* <CopyIcon /> */}
                 Copy
               </button>
               <SyntaxHighlighter
@@ -76,9 +97,15 @@ const MarkdownRenderer = ({ text, isDarkMode }) => {
             <>
               <button
                 onClick={handleDownloadCSV}
-                className="mb-2 p-2 text-sm flex items-center gap-1 cursor-pointer bg-blue-500 text-white border-none dark:bg-blue-700"
+                className="mb-2 p-2 text-sm cursor-pointer bg-blue-500 text-white border-none dark:bg-blue-700"
               >
                 Download CSV
+              </button>
+              <button
+                onClick={handleDownloadJSON}
+                className="mb-2 p-2 ml-2 text-sm cursor-pointer bg-green-500 text-white border-none dark:bg-green-700"
+              >
+                Download JSON
               </button>
               <table ref={tableRef} {...props} className="w-full border-collapse my-5 dark:text-gray-300">
                 {children}

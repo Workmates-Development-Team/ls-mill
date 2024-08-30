@@ -185,6 +185,9 @@ const Home = () => {
                     <img width={40} src="/images/bot.png" alt="" />
                   </div> */}
                 <MarkdownRenderer text={message.text} />
+                {/* <div>
+                  {message.text}
+                </div> */}
               </div>
             ) : (
               <div key={i} className="flex justify-end">
