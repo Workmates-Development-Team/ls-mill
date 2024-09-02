@@ -1,0 +1,8 @@
+flask_cors
+flask
+pymongo
+langchain
+langchain_community
+pandas
+pdfminer.six
+boto3
