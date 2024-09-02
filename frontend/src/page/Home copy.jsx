@@ -4,12 +4,26 @@ import { AuthContext } from "@/context/AuthContext";
 import AuthGaurd from "@/gaurd/AuthGaurd";
 import { cn } from "@/lib/utils";
 import axios from "axios";
-import { CircleStop, Plus, SendHorizonal, Speaker, Upload, Volume2 } from "lucide-react";
+import { Loader2, Plus, Upload } from "lucide-react";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MarkdownRenderer from "@/components/MarkdownReader";
 import { axiosInstance } from "@/utils/axios";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import TableSkeleton from "@/components/TableSkeleton";
 import { generateRandomString } from "@/utils/helper";
+import { PYTHON_API } from "@/constant/path";
 
 const Home = () => {
   const { id } = useParams();
@@ -17,8 +31,7 @@ const Home = () => {
   const [start_new, setStart_new] = useState(true);
   const [messages, setMessages] = useState([]);
   const [doc_id, setDoc_id] = useState(null);
-  const [prompt, setPrompt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { user } = useContext(AuthContext);
 
@@ -27,7 +40,11 @@ const Home = () => {
 
   const handleFileChange = (e) => {
     const filesArray = Array.from(e.target.files);
-    setSelectedFiles(filesArray);
+    if (filesArray.length + selectedFiles.length > 3) {
+      alert("You can only select up to 3 PDFs at a time in Demo version.");
+      return;
+    }
+    setSelectedFiles((prevFiles) => [...prevFiles, ...filesArray]);
   };
 
   const getChat = async () => {
@@ -56,6 +73,7 @@ const Home = () => {
 
   const handleUpload = async () => {
     try {
+      setLoading(true);
       const formData = new FormData();
       formData.append("user_id", user._id);
       formData.append("chat_id", id);
@@ -63,24 +81,42 @@ const Home = () => {
         formData.append("pdfs", file);
       });
 
-      const response = await axios.post(
-        "http://127.0.0.1:6001/upload_pdfs",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await axios.post(PYTHON_API + "/upload_pdfs", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       const updoadData = await response.data;
       console.log(updoadData);
 
       setDoc_id(updoadData?._id);
 
-      const { data } = await axios.post("http://127.0.0.1:6001/ask", {
+      const { data } = await axios.post(PYTHON_API + "/ask", {
         doc_id: updoadData?._id,
-        input_text: "summarize",
+        input_text: `Analyze the uploaded invoice PDF and extract all the data into a unified table format. The table should include the following columns:
+
+PO NO
+Date
+ItemNo
+Type
+Variety
+Size
+Color
+Article
+UOM
+Qty
+Rate
+Total
+Mother PO
+Make sure to remove any commas from numeric values. Provide the output in a single, continuous table format without breaking the data, even if the PDF is long. The output should follow this example:
+
+
+PO NO          | Date       | ItemNo | Type            | Variety        | Size         | Color       | Article | UOM | Qty | Rate  | Total   | Mother PO
+-------------- | ---------- | -------| ----------------| ---------------| ------------ | ----------- | ------- | --- | --- | ------| --------| -----------
+POSG24000197   | 02 JUL 2024| 1      | Fitted Sheet Set| Affinity Rimini| Single       | Pure White  | Akemi   | SET | 80  | 10.57 | 845.60  | -
+POSG24000197   | 02 JUL 2024| 2      | Fitted Sheet Set| Affinity Rimini| Super Single | Pure White  | Akemi   | SET | 96  | 11.08 | 1063.68 |
+Ensure the entire table is presented in one piece without splitting across different responses.`,
         start_new,
         session_number,
       });
@@ -103,89 +139,30 @@ const Home = () => {
       setSession_number(data?.session_number);
       setStart_new(false);
       console.log("Files uploaded successfully:", data);
+      setLoading(false);
     } catch (error) {
       console.error("Error uploading files:", error);
-    }
-  };
-
-  const handleChat = async () => {
-    try {
-      setIsLoading(true);
-      setPrompt("");
-      await axiosInstance.post(`/chat/${id}/message`, {
-        text: prompt,
-        by: "user",
-      });
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: prompt,
-          by: "user",
-        },
-      ]);
-
-      const { data } = await axios.post("http://127.0.0.1:6001/ask", {
-        doc_id,
-        input_text: prompt,
-        start_new,
-        session_number,
-      });
-
-      await axiosInstance.post(`/chat/${id}/message`, {
-        text: data?.response,
-        by: "ai",
-      });
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: data?.response,
-          by: "ai",
-        },
-      ]);
-
-      setSession_number(data?.session_number);
-      setStart_new(false);
-      setIsLoading(false);
-    } catch (error) {
-      console.log(error);
-      setIsLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleChat();
+      setLoading(false);
     }
   };
 
   const navigate = useNavigate();
-
   const handleNew = () => {
     const newId = generateRandomString();
-    const path = `/chat/${newId}`;
+    const path = `/`;
+
     setSession_number(null);
     setStart_new(true);
     setMessages([]);
     setDoc_id(null);
-    setPrompt("");
     setSelectedFiles([]);
     navigate(path, { replace: true });
   };
 
-  const handleSpeak = () => {
-    try {
-      
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
   return (
     <AuthGaurd>
       <div className="mx-auto max-w-7xl px-2 md:px-0 h-screen pt-16 pb-28 overflow-y-auto relative chat">
-        <div className="mt-3 flex items-center gap-4">
+        <div className="mt-3 flex flex-wrap items-center gap-4">
           <Button onClick={handleNew} variant="outline">
             <Plus className="w-4 h-4 mr-2" /> New Window
           </Button>
@@ -205,10 +182,11 @@ const Home = () => {
               className="hidden"
               multiple
               onChange={handleFileChange}
+              disabled={messages.length}
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {selectedFiles.map((file, index) => (
               <div
                 key={index}
@@ -221,33 +199,36 @@ const Home = () => {
 
           <div>
             <Button
-              disabled={doc_id || !selectedFiles?.length ? true : false}
+              disabled={
+                doc_id || !selectedFiles?.length || loading || messages?.length
+                  ? true
+                  : false
+              }
               onClick={handleUpload}
             >
-              Upload
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing{" "}
+                </>
+              ) : (
+                "Analyze"
+              )}
             </Button>
           </div>
+        </div>
+
+        <div className="flex justify-center mt-10">
+          {loading && <Loader2 className="h-16 w-16 animate-spin" />}
         </div>
 
         <div className="mt-4 flex flex-col gap-4">
           {messages?.map((message, i) =>
             message?.by === "ai" ? (
               <div key={i}>
-                <div>
-                  <img width={40} src="/images/bot.png" alt="" />
-                </div>
                 <MarkdownRenderer text={message.text} />
-
-                <div className="pl-2 pt-2">
-                  <Button
-                    className="rounded-full"
-                    size="icon"
-                    variant="outline"
-                  >
-                    {/* <CircleStop className="w-4 h-4 text-red-500" /> */}
-                    <Volume2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                {/* <div>
+                  {message.text}
+                </div> */}
               </div>
             ) : (
               <div key={i} className="flex justify-end">
@@ -258,38 +239,9 @@ const Home = () => {
               </div>
             )
           )}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="text-left px-5 py-2 rounded-lg dark:bg-gray-800 z-20 bg-gray-100">
-                <div>
-                  <img width={40} src="/images/bot.png" alt="" />
-                </div>
-                <p>Typing...</p>
-              </div>
-            </div>
-          )}
+
           <div ref={chatEndRef} />
         </div>
-
-        {/* <div className="max-w-7xl z-20 px-2 md:p-3 w-full dark:bg-gray-800 bg-gray-100 rounded-xl fixed bottom-0 shadow-sm">
-          <div>
-            <Textarea
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              value={prompt}
-              placeholder="Type your query here..."
-              className="resize-none"
-            />
-          </div>
-
-          <Button
-            onClick={handleChat}
-            className="absolute top-1/2 transform -translate-y-1/2 right-8"
-            size="icon"
-          >
-            <SendHorizonal className="w-4 h-4" />
-          </Button>
-        </div> */}
       </div>
     </AuthGaurd>
   );
