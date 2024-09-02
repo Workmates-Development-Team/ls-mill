@@ -55,7 +55,7 @@ export const AddSession_number = async (req, res) => {
 
 export const getAllChat = async (req, res) => {
   try {
-    const chats = await ChatModel.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const chats = await ChatModel.find({ user: req.user._id }).sort({ _id: -1 });
 
     if (!chats) {
       return res.status(404).json({ error: "Chat not found" });
