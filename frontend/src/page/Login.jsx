@@ -1,13 +1,16 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { axiosInstance } from "@/utils/axios";
 import { AuthContext } from "@/context/AuthContext";
 import GuestGaurd from "@/gaurd/GuestGaurd";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const Login = () => {
   const { getProfile } = useContext(AuthContext);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
+
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -22,21 +25,36 @@ const Login = () => {
         .required("Password is required"),
     }),
     onSubmit: async (values) => {
+      if (!recaptchaToken) {
+        alert("Please complete the reCAPTCHA");
+        return;
+      }
+
       try {
-        const { data } = await axiosInstance.post("/user/login", values);
+        const { data } = await axiosInstance.post("/user/login", {
+          ...values,
+          recaptchaToken,
+        });
         console.log(data);
         window.localStorage.setItem("token", data?.token);
         getProfile();
       } catch (error) {
         console.log(error);
-        alert(error?.response?.data?.message || "Something Went Worng");
+        alert(error?.response?.data?.message || "Something Went Wrong");
       }
     },
   });
 
+  const handleRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
+  };
+
   return (
     <GuestGaurd>
-      <div className="bg-gray-100 flex items-center justify-center min-h-screen">
+      <div className="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+        <div className="bg-[#36246C] pr-4 mb-10">
+          <img className="w-[240px]" src="/images/ls-mills-logo.png" alt="" />
+        </div>
         <div className="bg-white p-8 rounded-lg shadow-lg w-96">
           <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
           <form onSubmit={formik.handleSubmit}>
@@ -88,6 +106,12 @@ const Login = () => {
                 </p>
               ) : null}
             </div>
+            <div className="mb-4">
+              <ReCAPTCHA
+                sitekey="6Le_TNApAAAAAC4XftjW9BKlkEGjHC6IDV3C-VmB"
+                onChange={handleRecaptchaChange}
+              />
+            </div>
             <div className="flex items-center justify-between">
               <button
                 type="submit"
@@ -103,6 +127,19 @@ const Login = () => {
               </Link>
             </div>
           </form>
+        </div>
+
+        <div className="mt-4">
+          <p className="text-slate-700 font-medium text-sm">
+            Powered By{" "}
+            <a
+              className="text-blue-600 underline"
+              href="https://cloudworkmates.com/"
+              target="blank"
+            >
+              Workmates Core2Cloud
+            </a>
+          </p>
         </div>
       </div>
     </GuestGaurd>
