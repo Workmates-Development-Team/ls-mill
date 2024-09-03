@@ -25,10 +25,10 @@ const Login = () => {
         .required("Password is required"),
     }),
     onSubmit: async (values) => {
-      if (!recaptchaToken) {
-        alert("Please complete the reCAPTCHA");
-        return;
-      }
+      // if (!recaptchaToken) {
+      //   alert("Please complete the reCAPTCHA");
+      //   return;
+      // }
 
       try {
         const { data } = await axiosInstance.post("/user/login", {
@@ -106,12 +106,12 @@ const Login = () => {
                 </p>
               ) : null}
             </div>
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <ReCAPTCHA
                 sitekey="6Le_TNApAAAAAC4XftjW9BKlkEGjHC6IDV3C-VmB"
                 onChange={handleRecaptchaChange}
               />
-            </div>
+            </div> */}
             <div className="flex items-center justify-between">
               <button
                 type="submit"
