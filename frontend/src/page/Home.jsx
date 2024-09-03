@@ -94,7 +94,29 @@ const Home = () => {
 
       const { data } = await axios.post(PYTHON_API + "/ask", {
         doc_id: updoadData?._id,
-        input_text: `Analyze the uploaded invoice PDF and Consolidate the data into a unified table format with columns for PO NO, Date, ItemNo, Type, Variety, Size, Color, Article, UOM, Qty, Rate, Total and Mother PO. (in amount or any price don't include ',' just give me exact value)`,
+        input_text: `Analyze the uploaded invoice PDF and extract all the data into a unified table format. The table should include the following columns:
+
+PO NO
+Date
+ItemNo
+Type
+Variety
+Size
+Color
+Article
+UOM
+Qty
+Rate
+Total
+Mother PO
+Make sure to remove any commas from numeric values. Provide the output in a single, continuous table format without breaking the data, even if the PDF is long. The output should follow this example:
+
+
+PO NO          | Date       | ItemNo | Type            | Variety        | Size         | Color       | Article | UOM | Qty | Rate  | Total   | Mother PO
+-------------- | ---------- | -------| ----------------| ---------------| ------------ | ----------- | ------- | --- | --- | ------| --------| -----------
+POSG24000197   | 02 JUL 2024| 1      | Fitted Sheet Set| Affinity Rimini| Single       | Pure White  | Akemi   | SET | 80  | 10.57 | 845.60  | -
+POSG24000197   | 02 JUL 2024| 2      | Fitted Sheet Set| Affinity Rimini| Super Single | Pure White  | Akemi   | SET | 96  | 11.08 | 1063.68 |
+Ensure the entire table is presented in one piece without splitting across different responses.`,
         start_new,
         session_number,
       });

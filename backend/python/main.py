@@ -3,10 +3,16 @@ from flask_cors import CORS
 
 from pymongo import MongoClient
 
+from langchain_community.llms import Bedrock
+from langchain_community.chat_models import BedrockChat
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
+
 from pdfminer.high_level import extract_text
 
 import uuid
 import random
+import pandas as pd
 import os
 from bson import ObjectId
 
@@ -20,13 +26,19 @@ collection = db['chats']
 
 sessions = {}  # Dictionary to store conversation instances by session number
 pdf_index = None  # Global variable to hold the PDF index
+llm = None  # Global variable to hold the HR LLM model
 
-# Function to simulate BedrockChat API call
-def bedrock_chat(input_text, model_id, max_tokens, temperature):
-    # Placeholder function for interacting with BedrockChat API.
-    # Replace this with actual API call logic.
-    response = f"Simulated response for: {input_text}"
-    return response
+
+
+
+random_max_tokens = random.randint(500, 9999)
+llm = BedrockChat(
+    credentials_profile_name="default",
+    provider="anthropic",
+    model_id="anthropic.claude-3-haiku-20240307-v1:0",
+    model_kwargs={"temperature": 1, "max_tokens": random_max_tokens, "top_p": 1.0},
+    streaming=True,
+)
 
 @app.route('/upload_pdfs', methods=['POST'])
 def upload_pdfs():
@@ -71,7 +83,7 @@ def conversation_from_mongodb():
         data = request.get_json()
         doc_id = data.get('doc_id')
         input_text = data.get('input_text')
-        start_new = data.get('start_new', False)
+        start_new = True
         session_number = data.get('session_number')
 
         # If session_number is not provided or None, generate a new one
@@ -93,18 +105,23 @@ def conversation_from_mongodb():
         conversation = sessions.get(session_number, None)
 
         if start_new or conversation is None:
-            conversation = []
+            # Initialize a new BedrockChat and ConversationChain
+            conversation_llm = BedrockChat(
+                credentials_profile_name="default",
+                provider="anthropic",
+                model_id="anthropic.claude-3-haiku-20240307-v1:0",
+                model_kwargs={"temperature": 1, "max_tokens": 9999, "top_p": 1.0},
+                streaming=True,
+            )
+            conversation = ConversationChain(llm=conversation_llm, verbose=True, memory=ConversationBufferMemory())
             sessions[session_number] = conversation
 
         # Prepare input by combining pdf_texts content and user input with numbering
         pdf_text_contents = "\n\n".join([f"{i+1}. {pdf['content']}" for i, pdf in enumerate(pdf_texts)])
         full_input = f"{pdf_text_contents}\n\n{input_text}"
 
-        # Call BedrockChat API (simulated here)
-        response = bedrock_chat(full_input, "anthropic.claude-3-haiku-20240307-v1:0", max_tokens=9999, temperature=1.0)
-
-        # Store the conversation in memory
-        conversation.append({"input": input_text, "response": response})
+        # Get response from conversation model
+        response = conversation.predict(input=full_input)
 
         return jsonify({"response": response, "session_number": session_number})
 
