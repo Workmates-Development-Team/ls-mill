@@ -55,7 +55,7 @@ const Home = () => {
       setDoc_id(data?._id);
       setMessages(data?.chat);
       setSession_number(data?.session_number);
-      setStart_new(false);
+      setStart_new(true);
     } catch (error) {
       console.log(error);
     }
@@ -137,7 +137,7 @@ Ensure the entire table is presented in one piece without splitting across diffe
       ]);
 
       setSession_number(data?.session_number);
-      setStart_new(false);
+      setStart_new(true);
       console.log("Files uploaded successfully:", data);
       setLoading(false);
     } catch (error) {
