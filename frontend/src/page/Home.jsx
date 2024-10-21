@@ -9,21 +9,11 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MarkdownRenderer from "@/components/MarkdownReader";
 import { axiosInstance } from "@/utils/axios";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import TableSkeleton from "@/components/TableSkeleton";
+
 import { generateRandomString } from "@/utils/helper";
-import { PYTHON_API } from "@/constant/path";
+import { GEMINI_API, PYTHON_API } from "@/constant/path";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const Home = () => {
   const { id } = useParams();
@@ -32,6 +22,7 @@ const Home = () => {
   const [messages, setMessages] = useState([]);
   const [doc_id, setDoc_id] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [activeServer, setActiveServer] = useState("server-1");
 
   const { user } = useContext(AuthContext);
 
@@ -77,75 +68,74 @@ const Home = () => {
       const formData = new FormData();
       formData.append("user_id", user._id);
       formData.append("chat_id", id);
-      selectedFiles.forEach((file) => {
-        formData.append("pdfs", file);
+  
+      const isServer1 = activeServer === "server-1";
+  
+      if (isServer1) {
+        formData.append("file", selectedFiles[0]);
+      } else {
+        selectedFiles.forEach((file) => formData.append("pdfs", file));
+      }
+  
+      const uploadUrl = isServer1 ? GEMINI_API +"/upload" : PYTHON_API + "/upload_pdfs";
+      const response = await axios.post(uploadUrl, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
-      const response = await axios.post(PYTHON_API + "/upload_pdfs", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      const updoadData = await response.data;
-      console.log(updoadData);
-
-      setDoc_id(updoadData?._id);
-
-      const { data } = await axios.post(PYTHON_API + "/ask", {
-        doc_id: updoadData?._id,
-        input_text: `Analyze the uploaded invoice PDF and extract all the data into a unified table format. The table should include the following columns:
-
-PO NO
-Date
-ItemNo
-Type
-Variety
-Size
-Color
-Article
-UOM
-Qty
-Rate
-Total
-Mother PO
-Make sure to remove any commas from numeric values. Provide the output in a single, continuous table format without breaking the data, even if the PDF is long. The output should follow this example:
-
-
-PO NO          | Date       | ItemNo | Type            | Variety        | Size         | Color       | Article | UOM | Qty | Rate  | Total   | Mother PO
--------------- | ---------- | -------| ----------------| ---------------| ------------ | ----------- | ------- | --- | --- | ------| --------| -----------
-POSG24000197   | 02 JUL 2024| 1      | Fitted Sheet Set| Affinity Rimini| Single       | Pure White  | Akemi   | SET | 80  | 10.57 | 845.60  | -
-POSG24000197   | 02 JUL 2024| 2      | Fitted Sheet Set| Affinity Rimini| Super Single | Pure White  | Akemi   | SET | 96  | 11.08 | 1063.68 |
-Ensure the entire table is presented in one piece without splitting across different responses.`,
-        start_new,
-        session_number,
-      });
-
-      await axiosInstance.post(`/chat/${id}/message`, {
-        text: data?.response,
-        by: "ai",
-      });
-      await axiosInstance.post(`/chat/${id}/session_number`, {
-        session_number: data?.session_number,
-      });
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: data?.response,
-          by: "ai",
-        },
-      ]);
-
-      setSession_number(data?.session_number);
+  
+      const uploadData = response.data;
+      console.log(uploadData);
+  
+      setDoc_id(uploadData?._id);
+  
+      if (isServer1) {
+        await handleMessageSend(uploadData?.response, uploadData?.session_number);
+      } else {
+        const { data } = await axios.post(PYTHON_API + "/ask", {
+          doc_id: uploadData?._id,
+          input_text: getInvoiceExtractionPrompt(),
+          start_new,
+          session_number,
+        });
+  
+        await handleMessageSend(data?.response, data?.session_number);
+      }
+  
       setStart_new(true);
-      console.log("Files uploaded successfully:", data);
-      setLoading(false);
+      console.log("Files uploaded successfully.");
     } catch (error) {
       console.error("Error uploading files:", error);
+    } finally {
       setLoading(false);
     }
   };
-
+  
+  const handleMessageSend = async (responseText, sessionNumber) => {
+    await axiosInstance.post(`/chat/${id}/message`, {
+      text: responseText,
+      by: "ai",
+    });
+    await axiosInstance.post(`/chat/${id}/session_number`, {
+      session_number: sessionNumber,
+    });
+  
+    setMessages((prev) => [
+      ...prev,
+      { text: responseText, by: "ai" },
+    ]);
+    setSession_number(sessionNumber);
+  };
+  
+  const getInvoiceExtractionPrompt = () => `
+    Extract Data: Parse the uploaded invoice PDF and extract data specifically from the following columns:
+    PO NO, Date, ItemNo, Type, Variety, Size, Color, Article, UOM, Qty, Rate, Total, Mother PO
+    Data Processing: Remove commas in numeric fields like Qty, Rate, Total. Ignore rows like Subtotal, Total, Grand Total.
+    Table Formatting: Output all extracted data in a continuous table format without breaks.
+    Example:
+    PO NO        | Date     | ItemNo | Type   | Variety | Size | Qty | Rate | Total  | Mother PO
+    -------------|----------|--------|--------|---------|------|-----|------|--------|---------
+    POSG24000197 | 02 JUL 24| 1      | Fitted | Rimini  | White| 80  | 10.57| 845.60 | -
+  `;
+  
   const navigate = useNavigate();
   const handleNew = () => {
     const newId = generateRandomString();
@@ -159,7 +149,6 @@ Ensure the entire table is presented in one piece without splitting across diffe
     navigate(path, { replace: true });
   };
 
-  
   return (
     <AuthGaurd>
       <div className="mx-auto max-w-7xl px-2 md:px-0 h-screen pt-16 pb-28 overflow-y-auto relative chat">
@@ -167,6 +156,20 @@ Ensure the entire table is presented in one piece without splitting across diffe
           <Button onClick={handleNew} variant="outline">
             <Plus className="w-4 h-4 mr-2" /> New Window
           </Button>
+
+          <RadioGroup
+            onValueChange={(value) => setActiveServer(value)}
+            defaultValue={activeServer}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="server-1" id="r2" />
+              <Label htmlFor="r2">Server-1</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="server-2" id="r3" />
+              <Label htmlFor="r3">Server-2</Label>
+            </div>
+          </RadioGroup>
 
           <div className="flex flex-col items-center">
             <label
@@ -201,7 +204,9 @@ Ensure the entire table is presented in one piece without splitting across diffe
           <div>
             <Button
               disabled={
-                doc_id || !selectedFiles?.length || loading || messages?.length ? true : false
+                doc_id || !selectedFiles?.length || loading || messages?.length
+                  ? true
+                  : false
               }
               onClick={handleUpload}
             >

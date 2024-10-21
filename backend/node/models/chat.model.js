@@ -22,7 +22,6 @@ const chatSchema = new Schema({
       },
       content: {
         type: String,
-        required: true,
       },
     },
   ],
