@@ -26,10 +26,34 @@ const MarkdownRenderer = ({ text, isDarkMode }) => {
     document.body.removeChild(textarea);
   };
 
+  // const handleDownloadCSV = () => {
+  //   if (tableData.length === 0) return;
+
+  //   const csvRows = tableData.map(row => row.join(','));
+  //   const csvContent = `data:text/csv;charset=utf-8,${csvRows.join('\n')}`;
+  //   const encodedUri = encodeURI(csvContent);
+  //   const link = document.createElement("a");
+  //   link.setAttribute("href", encodedUri);
+  //   link.setAttribute("download", "table.csv");
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
+
   const handleDownloadCSV = () => {
     if (tableData.length === 0) return;
-
-    const csvRows = tableData.map(row => row.join(','));
+  
+    // Ensure all rows have the same number of columns as the header
+    const headers = tableData[0];
+    const csvRows = tableData.map(row => {
+      const paddedRow = [...row]; // Make a copy of the row
+      // Add empty strings for missing columns
+      while (paddedRow.length < headers.length) {
+        paddedRow.push('');
+      }
+      return paddedRow.join(',');
+    });
+  
     const csvContent = `data:text/csv;charset=utf-8,${csvRows.join('\n')}`;
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -39,6 +63,7 @@ const MarkdownRenderer = ({ text, isDarkMode }) => {
     link.click();
     document.body.removeChild(link);
   };
+  
 
   const handleDownloadJSON = () => {
     if (tableData.length <= 1) return;

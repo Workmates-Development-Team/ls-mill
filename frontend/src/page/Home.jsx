@@ -11,7 +11,7 @@ import MarkdownRenderer from "@/components/MarkdownReader";
 import { axiosInstance } from "@/utils/axios";
 
 import { generateRandomString } from "@/utils/helper";
-import { GEMINI_API, PYTHON_API } from "@/constant/path";
+import { PYTHON_API } from "@/constant/path";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
@@ -77,7 +77,7 @@ const Home = () => {
         selectedFiles.forEach((file) => formData.append("pdfs", file));
       }
   
-      const uploadUrl = isServer1 ? GEMINI_API +"/upload" : PYTHON_API + "/upload_pdfs";
+      const uploadUrl = isServer1 ? PYTHON_API +"/upload" : PYTHON_API + "/upload_pdfs";
       const response = await axios.post(uploadUrl, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
