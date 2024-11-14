@@ -128,19 +128,6 @@ const Login = () => {
             </div>
           </form>
         </div>
-
-        <div className="mt-4">
-          <p className="text-slate-700 font-medium text-sm">
-            Powered By{" "}
-            <a
-              className="text-blue-600 underline"
-              href="https://cloudworkmates.com/"
-              target="blank"
-            >
-              Workmates Core2Cloud
-            </a>
-          </p>
-        </div>
       </div>
     </GuestGaurd>
   );

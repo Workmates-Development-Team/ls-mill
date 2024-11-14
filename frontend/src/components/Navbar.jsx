@@ -59,11 +59,11 @@ export default function Navbar() {
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <Link to="/" className="flex flex-shrink-0 items-center">
                   <img
-                    className="h-10 w-auto"
+                    className="h-10 w-auto bg-[#36246C] pr-4"
                     src={
                       theme === "dark"
-                        ? "/images/logo-dark.png"
-                        : "/images/logo-light.png"
+                        ? "/images/ls-mills-logo.png"
+                        : "/images/ls-mills-logo.png"
                     }
                     alt="Your Company"
                   />

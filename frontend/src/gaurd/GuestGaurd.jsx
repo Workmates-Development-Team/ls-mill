@@ -11,6 +11,15 @@ const GuestGaurd = ({children }) => {
       navigate("/");
     }
   }, [loading, user]);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+  
   return <>{children}</>;
 };
 
