@@ -15,22 +15,18 @@ import os
 import time
 from bson import ObjectId
 
-# Configure the Google Gemini API Key
 genai.configure(api_key="AIzaSyCEY0yiUsQBEao9U0rIoKGtYdKsX-hLn64")
 
 app = Flask(__name__)
 CORS(app)
 
-# MongoDB connection setup
 client = MongoClient('mongodb://localhost:27017/')
 db = client['data_quest']
 collection = db['chats']
 
-# Global variables for ChatBedrock sessions and the LLM
-sessions = {}  # Dictionary to store conversation instances by session number
+sessions = {}
 random_max_tokens = random.randint(500, 9999)
 
-# Initialize ChatBedrock for Anthropic model
 llm = ChatBedrock(
     credentials_profile_name="default",
     provider="anthropic",
@@ -39,7 +35,6 @@ llm = ChatBedrock(
     streaming=True,
 )
 
-# Route to handle PDF uploads and extract text using PDFMiner
 @app.route('/upload_pdfs', methods=['POST'])
 def upload_pdfs():
     if 'pdfs' not in request.files:
@@ -63,7 +58,6 @@ def upload_pdfs():
         finally:
             os.remove(file_path)
 
-    # Save the extracted PDF text to MongoDB
     result = collection.update_one(
         {"user": ObjectId(user_id), "chatId": chat_id},
         {"$set": {"user": ObjectId(user_id), "chatId": chat_id}, "$push": {"pdf_text": {"$each": pdf_texts}}},
@@ -77,7 +71,6 @@ def upload_pdfs():
 
     return jsonify(response_data), 200
 
-# Route to handle conversation using Anthropic's ChatBedrock
 @app.route('/ask', methods=['POST'])
 def conversation_from_mongodb():
     try:
@@ -117,7 +110,6 @@ def conversation_from_mongodb():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Google Gemini file upload and data extraction
 def upload_to_gemini(path, mime_type=None):
     file = genai.upload_file(path, mime_type=mime_type)
     print(f"Uploaded file '{file.display_name}' as: {file.uri}")
@@ -135,7 +127,6 @@ def wait_for_files_active(files):
             raise Exception(f"File {file.name} failed to process")
     print("...all files ready")
 
-# API route to upload PDF and use Google Gemini for extraction
 @app.route('/upload', methods=['POST'])
 def upload_pdf():
     if 'file' not in request.files:
